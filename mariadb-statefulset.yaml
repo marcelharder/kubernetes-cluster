@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mariadb-statefulset
+spec:
+  serviceName: "mariadb"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      securityContext:
+        runAsUser: 777
+      volumes:
+       - name: mariadb-nfs-storage
+         persistentVolumeClaim:
+           claimName: maria-pvc
+      containers:
+      - name: db
+        image: mariadb:latest
+        env:
+          - name: MYSQL_ROOT_USERNAME
+            valueFrom:
+              secretKeyRef:
+                 name: mariadb-secret
+                 key: mariadb-root-username
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                 name: mariadb-secret
+                 key: mariadb-root-password
+        ports:
+         - containerPort: 3306
+        volumeMounts:
+         - mountPath: /var/lib/mysql
+           name: mariadb-nfs-storage
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+spec:
+  clusterIP: None
+  selector:
+    app: mariadb
+  ports:
+   - port: 3306
+     name: mysql
+
+

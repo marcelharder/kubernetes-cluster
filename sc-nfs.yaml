@@ -1,0 +1,15 @@
+# sc-nfs.yaml
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: nfs-csi
+provisioner: nfs.csi.k8s.io
+parameters:
+   server: 192.168.2.22
+   share: /volume1/microksData
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+mountOptions:
+   - vers=4.1

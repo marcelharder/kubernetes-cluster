@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  namespace: mariadb
+spec:
+  serviceName: mariadb-headless-service            # must match the headless Service name
+  replicas: 3                     # change to the number of replicas you need
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      initContainers:
+        - name: fix-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              chown -R 999:999 /var/lib/mysql
+              chmod -R g+rwX /var/lib/mysql
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+           - name: data
+             mountPath: /var/lib/mysql
+      # ----- START OF CONTAINERS ARRAY -----
+      containers:
+        - name: db
+          image: mariadb:11.4          # pick the version you require
+          ports:
+            - containerPort: 3306
+              name: mysql
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: mariadb-root-password
+           
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+      # ----- END OF CONTAINERS ARRAY -----
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: nfs-csi   # replace with your StorageClass
+        resources:
+          requests:
+            storage: 10Gi           # size per pod
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb-headless-service
+  namespace: mariadb
+spec:
+  clusterIP: None
+  selector:
+    app: db
+  ports:
+   - port: 3306
+     name: mysql
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mariadb-secret
+  namespace: mariadb
+type: Opaque
+stringData:
+  mariadb-root-password: "example"
+
