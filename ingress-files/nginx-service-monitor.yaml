@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nginx-ingress-monitoring
+  namespace: monitoring
+  labels:
+    # THIS IS THE FIX:
+    release: kube-prom-stack
+spec:
+  namespaceSelector:
+    matchNames:
+    - ingress
+  selector:
+    matchLabels:
+      # This must match the label on your NGINX Service
+      app.kubernetes.io/name: nginx-ingress-microk8s
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics

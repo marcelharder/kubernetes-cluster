@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: default
+  labels:                  # <--- ADD THIS SECTION
+    app: nginx-ingress     # <--- This is what the ServiceMonitor looks for
+spec:
+  clusterIP: 10.152.183.19
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: metrics
+    port: 10254
+    protocol: TCP
+    targetPort: 10254
+  selector:
+    app: nginx             # This stays the same (links Service to Pods)
+  type: clusterIP

@@ -1,0 +1,23 @@
+USER-SUPPLIED VALUES:
+USER-SUPPLIED VALUES: null
+grafana:
+  serviceAccount:
+    automountServiceAccountToken: true
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: nfs-csi
+    accessModes:
+      - ReadWriteOnce
+
+  sidecar:
+    dashboards:
+      image:
+        repository: quay.io/kiwigrid/k8s-sidecar
+        tag: 2.6.0
+      verifyK8sCertificate: false
+    datasources:
+      image:
+        repository: quay.io/kiwigrid/k8s-sidecar
+        tag: 2.6.0
+      verifyK8sCertificate: false

@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: foto-deployment
+  name: foto-container-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: foto
+      app: fotocontainer
   template:
     metadata:
       labels:
-        app: foto
+        app: fotocontainer
     spec:
       volumes:
         - name: foto-nfs
@@ -28,22 +28,7 @@ spec:
           env:
             - name: ConnectionStrings__SQLConnection
               value: Server=db-0.mariadb-headless-service.mariadb.svc.cluster.local;Port=3306;Database=foto;User=root;Password=example;Allow User Variables=true
-            - name: ComSettings__VideoUrl
-              value: http://video-service/
 
-
-
-#        - name: DB_HOST
-#              value: db-0.mariadb-headless-service.mariadb.svc.cluster.local   # <-- resolves to the headless Service
-#            - name: DB_PORT
-#              value: "3306"
-#            - name: MARIADB_ROOT_PASSWORD
-#              valueFrom:
-#                secretKeyRef:
-#                  name: mariadb-secret
-#                  key: mariadb-root-password
-#            - name: DB_NAME
-#              value: foto   # <-- replace with your DB name
 ---
 # Service
 apiVersion: v1
@@ -53,7 +38,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: foto
+    app: fotocontainer
   ports:
     - port: 80
       targetPort: 8080

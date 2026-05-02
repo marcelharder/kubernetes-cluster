@@ -1,0 +1,12 @@
+grafana:
+  sidecar:
+    dashboards:
+      enabled: true
+      env:
+        METHOD: LIST
+        SSL_VERIFY: "false"
+    datasources:
+      enabled: true
+      env:
+        SSL_VERIFY: "false"
+        SIDECAR_PORT: 8081

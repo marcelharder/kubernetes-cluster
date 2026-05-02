@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foto-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: foto
+  template:
+    metadata:
+      labels:
+        app: foto
+    spec:
+      volumes:
+        - name: foto-nfs
+          persistentVolumeClaim:
+            claimName: foto-nfs-pvc
+      restartPolicy: Always
+      containers:
+        - name: foto-app
+          image: marcel88/foto_app_pi:v14
+          volumeMounts:
+            - name: foto-nfs
+              mountPath: /nfs/fotoproject/fotos
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              value: db-0.mariadb-headless-service.mariadb.svc.cluster.local   # <-- resolves to the headless Service
+            - name: DB_PORT
+              value: "3306"
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mariadb-secret
+                  key: mariadb-root-password
+            - name: DB_NAME
+              value: foto   # <-- replace with your DB name
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: foto-service
+spec:
+  type: ClusterIP
+  selector:
+    app: foto
+  ports:
+    - port: 80
+      targetPort: 8080
+
+

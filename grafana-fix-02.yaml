@@ -1,0 +1,23 @@
+grafana:
+  # 1. Permanent External IP via MetalLB
+  service:
+    type: LoadBalancer
+
+  # 2. Fix the Sidecar CrashLoop and Port Conflicts
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchDeepth: 10
+      method: WATCH
+      # Disables the health server that causes port conflicts
+      env: 
+        - name: SC_HEALTHZ_SERVER
+          value: "false"
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      method: WATCH
+      env:
+        - name: SC_HEALTHZ_SERVER
+          value: "false"

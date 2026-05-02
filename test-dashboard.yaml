@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-custom-dashboard
+  namespace: monitoring
+  labels:
+    # This is the "hook" the sidecar is looking for
+    grafana_dashboard: "1"
+data:
+  # The filename inside Grafana will be my-dashboard.json
+  my-dashboard.json: |
+    {
+      "title": "K8s Sidecar Test",
+      "panels": []
+    }

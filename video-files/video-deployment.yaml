@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: videoservice
+  template:
+    metadata:
+      labels:
+        app: videoservice
+    spec:
+      volumes:
+        - name: video-nfs
+          persistentVolumeClaim:
+            claimName: foto-nfs-pvc
+      restartPolicy: Always
+      containers:
+        - name: video-app
+          image: marcel88/videoapp_pi:v10
+          volumeMounts:
+            - name: video-nfs
+              mountPath: /nfs/fotoproject
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: Server=db-0.mariadb-headless-service.mariadb.svc.cluster.local;Port=3306;Database=vid;User=root;Password=example;Allow User Variables=true
+            - name: VideoSettings__NasBasePath
+              value: "/nfs/fotoproject/videos"
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: video-service
+spec:
+  type: ClusterIP
+  selector:
+    app: videoservice
+  ports:
+    - port: 80
+      targetPort: 8080
+
