@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: foto-app
-          image: marcel88/foto_app_pi:v16
+          image: marcel88/photocontainer-pi:v8
           volumeMounts:
             - name: foto-nfs
               mountPath: /nfs/fotoproject
@@ -28,13 +28,14 @@ spec:
           env:
             - name: ConnectionStrings__SQLConnection
               value: Server=db-0.mariadb-headless-service.mariadb.svc.cluster.local;Port=3306;Database=foto;User=root;Password=example;Allow User Variables=true
-
+            - name: NfsLocation
+              value: "/nfs/fotoproject/fotos/"
 ---
 # Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: foto-service
+  name: foto-container-service
 spec:
   type: ClusterIP
   selector:

@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: foto-app
-          image: marcel88/foto_app_pi:v16
+          image: marcel88/foto-main-pi:v22
           volumeMounts:
             - name: foto-nfs
               mountPath: /nfs/fotoproject
@@ -27,29 +27,21 @@ spec:
             - containerPort: 8080
           env:
             - name: ConnectionStrings__SQLConnection
-              value: Server=db-0.mariadb-headless-service.mariadb.svc.cluster.local;Port=3306;Database=foto;User=root;Password=example;Allow User Variables=true
+              value: Server=db-0.mariadb-headless-service.mariadb.svc.cluster.local;Port=3306;Database=main;User=root;Password=example;Allow User Variables=true
             - name: ComSettings__VideoUrl
               value: http://video-service/
+            - name: ComSettings__PhotoContainerUrl
+              value: http://foto-container-service/
 
 
 
-#        - name: DB_HOST
-#              value: db-0.mariadb-headless-service.mariadb.svc.cluster.local   # <-- resolves to the headless Service
-#            - name: DB_PORT
-#              value: "3306"
-#            - name: MARIADB_ROOT_PASSWORD
-#              valueFrom:
-#                secretKeyRef:
-#                  name: mariadb-secret
-#                  key: mariadb-root-password
-#            - name: DB_NAME
-#              value: foto   # <-- replace with your DB name
+
 ---
 # Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: foto-service
+  name: foto-main-service
 spec:
   type: ClusterIP
   selector:

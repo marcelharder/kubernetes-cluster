@@ -79,7 +79,7 @@ spec:
       pathType: Prefix
       backend:
         service:
-          name: foto-service
+          name: foto-main-service
           port:
             number: 8080
 
