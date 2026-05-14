@@ -1,12 +1,24 @@
 apiVersion: v1
 kind: ConfigMap
-
+metadata:
+  name: nginx-load-balancer-microk8s-conf
+  namespace: ingress
+  # Annotations store the last-applied configuration for kubectl
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"compute-full-forwarded-for":"true","real-ip-header":"CF-Connecting-IP","set-real-ip-from":"173.245.48.0/20\n103.21.244.0/22\n103.22.200.0/22\n103.31.4.0/22\n141.101.64.0/18\n108.162.192.0/18\n190.93.240.0/20\n188.114.96.0/20\n197.234.240.0/22\n198.41.128.0/17\n162.158.0.0/15\n104.16.0.0/13\n104.24.0.0/14\n172.64.0.0/13\n131.0.72.0/22\n","use-forwarded-headers":"true"},"kind":"ConfigMap","metadata":{"annotations":{},"creationTimestamp":"2026-02-27T21:49:19Z","name":"nginx-load-balancer-microk8s-conf","namespace":"ingress","resourceVersion":"23727493","uid":"943a3b09-5cfb-4d0b-b50d-3aa0f9098b86"}}
 data:
- use-forwarded-headers: "true"
- compute-full-forwarded-for: "true"
- real-ip-header: "CF-Connecting-IP"
+  # Ensure NGINX calculates the full X-Forwarded-For chain
+  compute-full-forwarded-for: "true"
 
- set-real-ip-from: |
+  # Enable access logging
+  enable-access-log: "true"
+
+  # Use Cloudflare's header to determine the real client IP
+  real-ip-header: CF-Connecting-IP
+
+  # Only trust IPs in this range (Cloudflare IPs)
+  set-real-ip-from: |
     173.245.48.0/20
     103.21.244.0/22
     103.22.200.0/22
@@ -23,12 +35,5 @@ data:
     172.64.0.0/13
     131.0.72.0/22
 
-metadata:
-  annotations:
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"v1","kind":"ConfigMap","metadata":{"annotations":{},"name":"nginx-load-balancer-microk8s-conf","namespace":"ingress"}}
-  creationTimestamp: "2026-02-27T21:49:19Z"
-  name: nginx-load-balancer-microk8s-conf
-  namespace: ingress
-  resourceVersion: "23727493"
-  uid: 943a3b09-5cfb-4d0b-b50d-3aa0f9098b86
+  # Respect all X-Forwarded-* headers for proper routing
+  use-forwarded-headers: "true"

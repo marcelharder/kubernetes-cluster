@@ -19,7 +19,7 @@ spec:
       restartPolicy: Always
       containers:
         - name: video-app
-          image: marcel88/videoapp_pi:v10
+          image: marcel88/videoapp-pi:v11
           volumeMounts:
             - name: video-nfs
               mountPath: /nfs/fotoproject
