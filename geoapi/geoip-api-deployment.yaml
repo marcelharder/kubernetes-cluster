@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geoip-api
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geoip-api
+  template:
+    metadata:
+      labels:
+        app: geoip-api
+    spec:
+      containers:
+        - name: geoip-api
+          image: python:3.9-slim
+          command: ["python", "main.py"]
+          workingDir: /app
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: app
+              mountPath: /app
+      volumes:
+        - name: app
+          configMap:
+            name: geoip-api-code
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: geoip-api-code
+  namespace: monitoring
+data:
+  main.py: |
+    from fastapi import FastAPI
+    import geoip2.database
+    import os
+
+    app = FastAPI()
+
+    # Path inside the container
+    DB_PATH = "/app/GeoLite2-City.mmdb"
+
+    @app.get("/lookup")
+    def lookup(ip: str):
+        try:
+            reader = geoip2.database.Reader(DB_PATH)
+            response = reader.city(ip)
+            return {
+                "ip": ip,
+                "country": response.country.name,
+                "city": response.city.name,
+                "asn": response.traits.autonomous_system_number
+            }
+        except Exception as e:
+            return {"error": str(e)}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geoip-api
+  namespace: monitoring
+spec:
+  selector:
+    app: geoip-api
+  ports:
+    - port: 8080
+      targetPort: 8080

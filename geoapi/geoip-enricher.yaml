@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geoip-enricher
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geoip-enricher
+  template:
+    metadata:
+      labels:
+        app: geoip-enricher
+    spec:
+      containers:
+        - name: geoip-enricher
+          image: tiangolo/uvicorn-gunicorn-fastapi:python3.9
+          ports:
+            - containerPort: 8080
+          env:
+            - name: MODULE_NAME
+              value: "main"
+            - name: VARIABLE_NAME
+              value: "app"
+            - name: PORT
+              value: "8080"
+            - name: GEOIP_API
+              value: "http://geoip-api.monitoring.svc.cluster.local:8080/lookup?ip="
+            - name: LOKI_URL
+              value: "http://loki-stack.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+          volumeMounts:
+            - name: app
+              mountPath: /app
+      volumes:
+        - name: app
+          configMap:
+            name: geoip-enricher-code
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: geoip-enricher-code
+  namespace: monitoring
+data:
+  main.py: |
+    from fastapi import FastAPI, Request
+    import httpx
+    import os
+    import re
+    import time
+
+    app = FastAPI()
+
+    GEOIP_API = os.getenv("GEOIP_API")
+    LOKI_URL = os.getenv("LOKI_URL")
+
+    # Extract IPv4 from log line
+    IP_REGEX = re.compile(r"(\d+\.\d+\.\d+\.\d+)")
+
+    @app.post("/enrich")
+    async def enrich(request: Request):
+        records = await request.json()
+
+        # Fluent Bit sends a list of records
+        if not isinstance(records, list):
+            records = [records]
+
+        loki_streams = []
+
+        async with httpx.AsyncClient() as client:
+            for record in records:
+                log = record.get("log", "")
+
+                # Extract client IP
+                m = IP_REGEX.search(log)
+                if not m:
+                    continue
+
+                ip = m.group(1)
+
+                # GeoIP lookup
+                geo = {}
+                try:
+                    r = await client.get(GEOIP_API + ip, timeout=1.0)
+                    if r.status_code == 200:
+                        geo = r.json()
+                except:
+                    pass
+
+                # Loki timestamp
+                ts = str(int(time.time() * 1_000_000_000))
+
+                loki_streams.append({
+                    "stream": {
+                        "client_ip": ip,
+                        "geo_country": geo.get("country", "unknown"),
+                        "geo_city": geo.get("city", "unknown"),
+                        "geo_asn": geo.get("asn", "unknown"),
+                    },
+                    "values": [
+                        [ts, log]
+                    ]
+                })
+
+            # Push to Loki
+            if loki_streams:
+                await client.post(LOKI_URL, json={"streams": loki_streams}, timeout=1.0)
+
+        return {"status": "ok", "processed": len(loki_streams)}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geoip-enricher
+  namespace: monitoring
+spec:
+  selector:
+    app: geoip-enricher
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+
+
+
