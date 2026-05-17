@@ -26,7 +26,7 @@ spec:
             - name: PORT
               value: "8080"
             - name: GEOIP_API
-              value: "http://geoip-api.monitoring.svc.cluster.local:8080/lookup?ip="
+              value: "http://geoip-api.monitoring.svc.cluster.local/"
             - name: LOKI_URL
               value: "http://loki-stack.monitoring.svc.cluster.local:3100/loki/api/v1/push"
           volumeMounts:
@@ -98,6 +98,7 @@ data:
                         "geo_country": geo.get("country", "unknown"),
                         "geo_city": geo.get("city", "unknown"),
                         "geo_asn": geo.get("asn", "unknown"),
+                        "geo_asn_org": geo.get("asnOrganization", "unknown"),
                     },
                     "values": [
                         [ts, log]
